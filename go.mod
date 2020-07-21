@@ -1,3 +1,3 @@
-module staganography
+module imgcoder
 
 go 1.14
