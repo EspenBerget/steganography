@@ -123,11 +123,13 @@ func dec() {
 	cErr(err)
 	defer imgPath.Close()
 
+	// decode png file
 	img, err := png.Decode(imgPath)
 	cErr(err)
 
 	b := img.Bounds()
 
+	// Decode image message
 	msg := make([]uint8, b.Max.Y*b.Max.X)
 	ix := 0
 	for y := 0; y < b.Max.Y; y++ {
@@ -139,7 +141,7 @@ func dec() {
 		}
 	}
 
-	//fmt.Println(msgDecoder(msg)[:100])
+	// print image message
 	fmt.Println(string(msgDecoder(msg)))
 
 }
