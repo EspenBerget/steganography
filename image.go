@@ -7,7 +7,8 @@ import (
 	"os"
 
 	"image/color"
-	"image/jpeg"
+	_ "image/jpeg"
+	"image/png"
 )
 
 // HANDLES ERRORS (not really, just quits :p )
@@ -67,21 +68,38 @@ func toGray(img image.Image) *image.Gray {
 	return g
 }
 
-// MAIN
-func main() {
-	imgPath, err := os.Open("gray.jpg")
+// ARGS
+func gray() {
+	imgPath, err := os.Open(os.Args[2])
+	cErr(err)
+	defer imgPath.Close()
+	img, _, err := image.Decode(imgPath)
+	cErr(err)
+	dstPath, err := os.Create("gray_" + os.Args[2]) // e.g: "gray_cat.jpg"
+	cErr(err)
+	defer dstPath.Close()
+
+	png.Encode(dstPath, toGray(img))
+}
+
+func enc() {
+	imgPath, err := os.Open(os.Args[2])
 	cErr(err)
 	defer imgPath.Close()
 
-	src, err := jpeg.Decode(imgPath)
+	dstPath, err := os.Create("enc_" + os.Args[2])
 	cErr(err)
+	defer dstPath.Close()
+
+	// Read src image
+	src, err := png.Decode(imgPath)
+	cErr(err)
+
+	// Encode text
+	enc := msgEncoder([]uint8(os.Args[3]))
+
+	// Encode image
 	b := src.Bounds()
-	//src := toGray(img) // must be a better way
-
-	// test encoder and decoder
-	enc := msgEncoder([]uint8("Cat!"))
-
-	// Image from code
 	ix := 0
 	dst := image.NewGray(b)
 	for y := 0; y < b.Max.Y; y++ {
@@ -96,28 +114,56 @@ func main() {
 		}
 	}
 
-	// Write to src file
-	dstPath, err := os.Create("grayCode.jpg")
-	cErr(err)
-	jpeg.Encode(dstPath, dst, nil)
+	// Write to destination
+	png.Encode(dstPath, dst)
+}
 
-	// get data from encoded image
+func dec() {
+	imgPath, err := os.Open(os.Args[2])
+	cErr(err)
+	defer imgPath.Close()
+
+	img, err := png.Decode(imgPath)
+	cErr(err)
+
+	b := img.Bounds()
+
 	msg := make([]uint8, b.Max.Y*b.Max.X)
-	ix = 0
+	ix := 0
 	for y := 0; y < b.Max.Y; y++ {
 		for x := 0; x < b.Max.X; x++ {
-			c := dst.GrayAt(x, y)
-			msg[ix] = c.Y & 0x01
+			p := img.At(x, y)
+			c := color.GrayModel.Convert(p).(color.Gray).Y
+			msg[ix] = c & 0x01
 			ix++
 		}
 	}
 
+	//fmt.Println(msgDecoder(msg)[:100])
 	fmt.Println(string(msgDecoder(msg)))
 
-	// Make a gray image
-	//	dstPath, err := os.Create("gray.jpg")
-	//	cErr(err)
-	//	defer dstPath.Close()
-	//
-	//	jpeg.Encode(dstPath, toGray(img), nil)
+}
+
+// MAIN
+func main() {
+	if len(os.Args) < 3 {
+		fmt.Printf("USAGE: %v <gray|enc|dec> <image> [text]\n", os.Args[0])
+		os.Exit(1)
+	}
+
+	switch os.Args[1] {
+	case "gray":
+		gray()
+	case "enc":
+		if len(os.Args) != 4 {
+			fmt.Println("Text not provided")
+			os.Exit(3)
+		}
+		enc()
+	case "dec":
+		dec()
+	default:
+		fmt.Println("Unknown command", os.Args[1])
+		os.Exit(2)
+	}
 }
