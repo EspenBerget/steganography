@@ -73,10 +73,10 @@ func main() {
 	cErr(err)
 	defer imgPath.Close()
 
-	img, err := jpeg.Decode(imgPath)
+	src, err := jpeg.Decode(imgPath)
 	cErr(err)
-	b := img.Bounds()
-	src := toGray(img) // must be a better way
+	b := src.Bounds()
+	//src := toGray(img) // must be a better way
 
 	// test encoder and decoder
 	enc := msgEncoder([]uint8("Cat!"))
@@ -86,17 +86,12 @@ func main() {
 	dst := image.NewGray(b)
 	for y := 0; y < b.Max.Y; y++ {
 		for x := 0; x < b.Max.X; x++ {
-			var c color.Gray
-			c = src.GrayAt(x, y)
-			//if ix < len(enc) {
-			//	c = color.Gray{Y: c.Y&0xfe | enc[ix]}
-			//	ix++
-			//}
+			a := color.GrayModel.Convert(src.At(x, y)).(color.Gray).Y
 			if ix == len(enc) {
 				ix = 0
 			}
-			c = color.Gray{Y: c.Y&0xfe | enc[ix]}
-			dst.SetGray(x, y, c)
+			c := color.Gray{Y: a&0xfe | enc[ix]}
+			dst.Set(x, y, c)
 			ix++
 		}
 	}
