@@ -75,7 +75,7 @@ func gray() {
 	defer imgPath.Close()
 	img, _, err := image.Decode(imgPath)
 	cErr(err)
-	dstPath, err := os.Create("gray_" + os.Args[2]) // e.g: "gray_cat.jpg"
+	dstPath, err := os.Create("gray_" + os.Args[2])
 	cErr(err)
 	defer dstPath.Close()
 
@@ -168,4 +168,5 @@ func main() {
 		fmt.Println("Unknown command", os.Args[1])
 		os.Exit(2)
 	}
+
 }
